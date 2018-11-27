@@ -31,7 +31,7 @@ describe("Errors - isKnownError", () => {
   it("should return false for a RequestError", () => {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "http://www.example.com");
-    const requestError = new RequestError(xhr, "foo", "bar");
+    const requestError = new RequestError(xhr, "foo", 300, "bar");
     expect(isKnownError(requestError)).toBe(false);
   });
 
@@ -48,7 +48,7 @@ describe("Errors - isKnownError", () => {
   it("should return true for a NetworkError", () => {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "http://www.example.com");
-    const requestError = new RequestError(xhr, "foo", "bar");
+    const requestError = new RequestError(xhr, "foo", 404, "bar");
     const networkError = new NetworkError("foo", requestError, false);
     expect(isKnownError(networkError)).toBe(true);
   });

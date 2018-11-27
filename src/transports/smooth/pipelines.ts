@@ -100,6 +100,7 @@ export default function(
         resolving = request({
           url: replaceToken(url, ""),
           responseType: "document",
+          sendProgressEvents: false,
         }).pipe(
           map(({ value }) : string => {
             const extractedURL = extractISML(value.responseData);

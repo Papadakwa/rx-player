@@ -20,7 +20,7 @@ describe("errors - RequestError", () => {
   it("should format a RequestError when called", () => {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "http://www.example.com");
-    const requestError = new RequestError(xhr, "foo", "bar");
+    const requestError = new RequestError(xhr, "foo", xhr.status, "bar");
     expect(requestError).toBeInstanceOf(Error);
     expect(requestError.name).toBe("RequestError");
     expect(requestError.url).toBe("foo");

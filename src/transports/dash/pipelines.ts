@@ -65,8 +65,9 @@ import generateSegmentLoader from "./segment_loader";
  */
 function requestStringResource(url : string) : Observable<string> {
   return request({ url,
-                   responseType: "text" })
-  .pipe(
+                   responseType: "text",
+                   sendProgressEvents: false }
+  ).pipe(
     filter((e) => e.type === "response"),
     map((e) => e.value.responseData)
   );

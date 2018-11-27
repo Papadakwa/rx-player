@@ -235,12 +235,12 @@ function request<T>(
 
     xhr.onerror = function onXHRError() {
       const errorCode = RequestErrorTypes.ERROR_EVENT;
-      obs.error(new RequestError(xhr, url, errorCode));
+      obs.error(new RequestError(xhr, url, xhr.status, errorCode));
     };
 
     xhr.ontimeout = function onXHRTimeout() {
       const errorCode = RequestErrorTypes.TIMEOUT;
-      obs.error(new RequestError(xhr, url, errorCode));
+      obs.error(new RequestError(xhr, url, xhr.status,  errorCode));
     };
 
     if (options.sendProgressEvents === true) {
@@ -278,7 +278,7 @@ function request<T>(
 
           if (responseData == null) {
             const errorCode = RequestErrorTypes.PARSE_ERROR;
-            obs.error(new RequestError(xhr, _url, errorCode));
+            obs.error(new RequestError(xhr, _url, xhr.status, errorCode));
             return;
           }
 
@@ -295,7 +295,7 @@ function request<T>(
 
         } else {
           const errorCode = RequestErrorTypes.ERROR_HTTP_CODE;
-          obs.error(new RequestError(xhr, url, errorCode));
+          obs.error(new RequestError(xhr, url, xhr.status, errorCode));
         }
       }
     };

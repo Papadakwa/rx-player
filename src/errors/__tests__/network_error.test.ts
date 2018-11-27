@@ -22,7 +22,7 @@ describe("errors - NetworkError", () => {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "http://www.example.com");
     const reason = "bar";
-    const requestError = new RequestError(xhr, "foo", reason);
+    const requestError = new RequestError(xhr, "foo", 503, reason);
     const networkError = new NetworkError("foo", requestError, true);
     expect(networkError).toBeInstanceOf(Error);
     expect(networkError.name).toBe("NetworkError");
@@ -39,7 +39,7 @@ describe("errors - NetworkError", () => {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "http://www.example.com");
     const reason = "bar";
-    const requestError = new RequestError(xhr, "foo", reason);
+    const requestError = new RequestError(xhr, "foo", 702, reason);
     const networkError = new NetworkError("MEDIA_ERR_NETWORK", requestError, true);
     expect(networkError).toBeInstanceOf(Error);
     expect(networkError.name).toBe("NetworkError");
@@ -55,7 +55,7 @@ describe("errors - NetworkError", () => {
   it("should return false in isHttpError if not an HTTP error", () => {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "http://www.example.com");
-    const requestError = new RequestError(xhr, "foo", "bar");
+    const requestError = new RequestError(xhr, "foo", 111, "bar");
     const networkError = new NetworkError("MEDIA_ERR_NETWORK", requestError, true);
     expect(networkError.isHttpError(0)).toBe(false);
   });
@@ -65,7 +65,7 @@ describe("errors - NetworkError", () => {
   /* tslint:enable max-line-length */
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "http://www.example.com");
-    const requestError = new RequestError(xhr, "foo", "ERROR_HTTP_CODE");
+    const requestError = new RequestError(xhr, "foo", .323, "ERROR_HTTP_CODE");
     const networkError = new NetworkError("MEDIA_ERR_NETWORK", requestError, true);
     expect(networkError.isHttpError(1)).toBe(false);
   });
@@ -75,8 +75,8 @@ describe("errors - NetworkError", () => {
   /* tslint:enable max-line-length */
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "http://www.example.com");
-    const requestError = new RequestError(xhr, "foo", "ERROR_HTTP_CODE");
+    const requestError = new RequestError(xhr, "foo", 707, "ERROR_HTTP_CODE");
     const networkError = new NetworkError("MEDIA_ERR_NETWORK", requestError, true);
-    expect(networkError.isHttpError(0)).toBe(true);
+    expect(networkError.isHttpError(707)).toBe(true);
   });
 });

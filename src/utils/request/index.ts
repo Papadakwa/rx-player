@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
+import fetchRequest, {
+  fetchIsSupported,
+} from "./fetch";
 import xhrRequest, {
   IRequestOptions,
   IRequestProgress,
   IRequestResponse,
 } from "./xhr_request";
 
-export default xhrRequest;
+export default fetchIsSupported() ?
+  fetchRequest : xhrRequest;
 export {
   IRequestOptions,
   IRequestProgress,
