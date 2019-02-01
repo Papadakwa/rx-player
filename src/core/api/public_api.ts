@@ -667,18 +667,21 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     const options = parseLoadVideoOptions(opts);
     log.info("API: Calling loadvideo", options);
 
-    const { autoPlay,
-            defaultAudioTrack,
-            defaultTextTrack,
-            keySystems,
-            manualBitrateSwitchingMode,
-            networkConfig,
-            startAt,
-            supplementaryImageTracks,
-            supplementaryTextTracks,
-            transport,
-            transportOptions,
-            url } = options;
+    const {
+      autoPlay,
+      defaultAudioTrack,
+      defaultTextTrack,
+      keySystems,
+      manualBitrateSwitchingMode,
+      networkConfig,
+      startAt,
+      supplementaryImageTracks,
+      supplementaryTextTracks,
+      transport,
+      transportOptions,
+      url,
+      playbackQualityRequirements,
+    } = options;
 
     // Perform multiple checks on the given options
     if (!this.videoElement) {
@@ -733,18 +736,18 @@ class Player extends EventEmitter<IPublicAPIEvent> {
         initialBitrates: this._priv_bitrateInfos.lastBitrates,
         manualBitrates: this._priv_bitrateInfos.manualBitrates,
         maxAutoBitrates: this._priv_bitrateInfos.initialMaxAutoBitrates,
-        throttle: this._priv_throttleWhenHidden ?
-        { video: isInBackground$()
-            .pipe(
-              map(isBg => isBg ? 0 :
-                                 Infinity),
-              takeUntil(this._priv_stopCurrentContent$)
-            ), } :
-        {},
-        limitWidth: this._priv_limitVideoWidth ?
-        { video: videoWidth$(videoElement)
-            .pipe(takeUntil(this._priv_stopCurrentContent$)), } :
-        {},
+        throttle: this._priv_throttleWhenHidden ? {
+          video: isInBackground$()
+          .pipe(
+            map(isBg => isBg ? 0 : Infinity),
+            takeUntil(this._priv_stopCurrentContent$)
+          ),
+        } : {},
+        limitWidth: this._priv_limitVideoWidth ? {
+          video: videoWidth$(videoElement)
+            .pipe(takeUntil(this._priv_stopCurrentContent$)),
+        } : {},
+        playbackQualityRequirements,
       };
 
       // Options used by the TextTrack SourceBuffer

@@ -49,6 +49,7 @@ import throttle from "../../utils/rx-throttle";
 import ABRManager, {
   IABRMetric,
   IABRRequest,
+  IPlaybackQualityRequirements,
 } from "../abr";
 import {
   IEMEManagerEvent,
@@ -103,11 +104,14 @@ function getManifestPipelineOptions(
 
 // Arguments to give to the `initialize` function
 export interface IInitializeOptions {
-  adaptiveOptions: { initialBitrates : Partial<Record<IBufferType, number>>;
-                     manualBitrates : Partial<Record<IBufferType, number>>;
-                     maxAutoBitrates : Partial<Record<IBufferType, number>>;
-                     throttle : Partial<Record<IBufferType, Observable<number>>>;
-                     limitWidth : Partial<Record<IBufferType, Observable<number>>>; };
+  adaptiveOptions: {
+    initialBitrates : Partial<Record<IBufferType, number>>;
+    manualBitrates : Partial<Record<IBufferType, number>>;
+    maxAutoBitrates : Partial<Record<IBufferType, number>>;
+    throttle : Partial<Record<IBufferType, Observable<number>>>;
+    limitWidth : Partial<Record<IBufferType, Observable<number>>>;
+    playbackQualityRequirements? : IPlaybackQualityRequirements;
+  };
   autoPlay : boolean;
   bufferOptions : { wantedBufferAhead$ : Observable<number>;
                     maxBufferAhead$ : Observable<number>;

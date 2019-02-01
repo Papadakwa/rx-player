@@ -149,6 +149,12 @@ export interface ILoadVideoOptions {
   hideNativeSubtitle? : boolean;
   textTrackElement? : HTMLElement;
   manualBitrateSwitchingMode? : "seamless"|"direct";
+  playbackQualityRequirements? : IPlaybackQualityRequirements;
+}
+
+interface IPlaybackQualityRequirements {
+  shouldBeSmooth: boolean;
+  shouldBePowerEfficient: boolean;
 }
 
 interface IParsedLoadVideoOptionsBase {
@@ -163,6 +169,7 @@ interface IParsedLoadVideoOptionsBase {
   defaultAudioTrack : IAudioTrackPreference|null|undefined;
   defaultTextTrack : ITextTrackPreference|null|undefined;
   startAt : IParsedStartAtOption|undefined;
+  playbackQualityRequirements : IPlaybackQualityRequirements|undefined;
   manualBitrateSwitchingMode : "seamless"|"direct";
 }
 
@@ -342,6 +349,7 @@ function parseLoadVideoOptions(
   let textTrackMode : "native"|"html";
   let textTrackElement : HTMLElement|undefined;
   let startAt : IParsedStartAtOption|undefined;
+  let playbackQualityRequirements : IPlaybackQualityRequirements|undefined;
 
   if (!options || options.url == null) {
     throw new Error("No url set on loadVideo");
@@ -472,29 +480,36 @@ function parseLoadVideoOptions(
     }
   }
 
-  const networkConfig = options.networkConfig == null ?
-    {} :
-    { manifestRetry: options.networkConfig.manifestRetry,
-      offlineRetry: options.networkConfig.offlineRetry,
-      segmentRetry: options.networkConfig.segmentRetry };
+  if (options.playbackQualityRequirements) {
+    playbackQualityRequirements = options.playbackQualityRequirements;
+  }
+
+  const networkConfig = options.networkConfig == null ? {} : {
+    manifestRetry: options.networkConfig.manifestRetry,
+    offlineRetry: options.networkConfig.offlineRetry,
+    segmentRetry: options.networkConfig.segmentRetry,
+  };
 
   // TODO without cast
   /* tslint:disable no-object-literal-type-assertion */
-  return { autoPlay,
-           defaultAudioTrack,
-           defaultTextTrack,
-           hideNativeSubtitle,
-           keySystems,
-           manualBitrateSwitchingMode,
-           networkConfig,
-           startAt,
-           supplementaryImageTracks,
-           supplementaryTextTracks,
-           textTrackElement,
-           textTrackMode,
-           transport,
-           transportOptions,
-           url } as IParsedLoadVideoOptions;
+  return {
+    autoPlay,
+    defaultAudioTrack,
+    defaultTextTrack,
+    hideNativeSubtitle,
+    keySystems,
+    manualBitrateSwitchingMode,
+    networkConfig,
+    startAt,
+    supplementaryImageTracks,
+    supplementaryTextTracks,
+    textTrackElement,
+    textTrackMode,
+    transport,
+    transportOptions,
+    url,
+    playbackQualityRequirements,
+  } as IParsedLoadVideoOptions;
   /* tslint:enable no-object-literal-type-assertion */
 }
 

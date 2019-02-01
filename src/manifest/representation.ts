@@ -19,17 +19,22 @@ import IRepresentationIndex from "./representation_index";
 interface IContentProtection { keyId?: string;
                                systemId?: string; }
 
-export interface IRepresentationArguments { bitrate : number;
-                                            id : string;
-                                            index : IRepresentationIndex;
+export interface IRepresentationArguments {
+  // -- required
+  bitrate : number;
+  id : string;
+  index : IRepresentationIndex;
 
-                                            // -- optional
-                                            codecs? : string;
-                                            contentProtections? : IContentProtection[];
-                                            frameRate? : string;
-                                            height? : number;
-                                            mimeType? : string;
-                                            width? : number; }
+  // -- optional
+  channels?: number;
+  sampleRate?: number;
+  codecs? : string;
+  contentProtections? : IContentProtection[];
+  frameRate? : string;
+  height? : number;
+  mimeType? : string;
+  width? : number;
+}
 
 /**
  * Normalized Representation structure.
@@ -46,8 +51,14 @@ class Representation {
   // Bitrate this Representation is in, in bits per seconds.
   public bitrate : number;
 
-  // Frame-rate, when it can be applied, of this Representation, in any textual
-  // indication possible (often under a ratio form).
+  public sampleRate? : number;
+  public channels? : number;
+
+  /**
+   * Frame-rate, when it can be applied, of this Representation, in any textual
+   * indication possible (often under a ratio form).
+   * @type {string}
+   */
   public frameRate? : string;
 
   public codec? : string;
@@ -84,6 +95,14 @@ class Representation {
 
     if (args.frameRate) {
       this.frameRate = args.frameRate;
+    }
+
+    if (args.sampleRate) {
+      this.sampleRate = args.sampleRate;
+    }
+
+    if (args.channels) {
+      this.channels = args.channels;
     }
 
     this.index = args.index;
