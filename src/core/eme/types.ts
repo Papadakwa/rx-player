@@ -35,9 +35,25 @@ export interface ICreatedMediaKeysEvent { type: "created-media-keys";
 export interface IAttachedMediaKeysEvent { type: "attached-media-keys";
                                            value: IMediaKeysInfos; }
 
+export type ILicense = TypedArray |
+                       ArrayBuffer;
+
+export interface ILicenseUpdatedEvent { type: "license-updated";
+                                        value : { source : MediaKeyMessageType |
+                                                           "key-status-change";
+                                                  session : MediaKeySession |
+                                                            ICustomMediaKeySession;
+                                                  license: ILicense; }; }
+
 export type IEMEManagerEvent = IEMEWarningEvent |
                                ICreatedMediaKeysEvent |
-                               IAttachedMediaKeysEvent;
+                               IAttachedMediaKeysEvent |
+                               ILicenseUpdatedEvent |
+                               IKeyStatusChangeEvent;
+
+export interface IKeyStatusChangeEvent { type : "key-status-change";
+                                         value: { keyStatus: MediaKeyStatus;
+                                                  keyId : ArrayBuffer; }; }
 
 // Infos indentifying a MediaKeySystemAccess
 export interface IKeySystemAccessInfos {
@@ -104,16 +120,5 @@ export interface IKeySystemOption {
   audioRobustnesses?: Array<string|undefined>;
   throwOnLicenseExpiration? : boolean;
   disableMediaKeysAttachmentLock? : boolean;
+  throwOnInternalError? : boolean;
 }
-
-// Keys are the different key statuses possible.
-// Values are ``true`` if such key status defines an error
-/* tslint:disable no-object-literal-type-assertion */
-export const KEY_STATUS_ERRORS = { "internal-error": true,
-                                   expired: false,
-                                   released: false,
-                                   "output-restricted": false,
-                                   "output-downscaled": false,
-                                   "status-pending": false,
-                                 } as Partial<Record<string, boolean>>;
-/* tslint:enable no-object-literal-type-assertion */
