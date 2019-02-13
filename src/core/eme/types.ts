@@ -51,9 +51,10 @@ export type IEMEManagerEvent = IEMEWarningEvent |
                                ILicenseUpdatedEvent |
                                IKeyStatusChangeEvent;
 
-export interface IKeyStatusChangeEvent { type : "key-status-change";
-                                         value: { keyStatus: MediaKeyStatus;
-                                                  keyId : ArrayBuffer; }; }
+export interface IKeyStatusChangeEvent { type : "key-statuses-change";
+                                         value: { statuses: Array<{
+                                                    keyStatus: MediaKeyStatus;
+                                                    keyId : ArrayBuffer; }>; }; }
 
 // Infos indentifying a MediaKeySystemAccess
 export interface IKeySystemAccessInfos {
