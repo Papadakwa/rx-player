@@ -123,7 +123,8 @@ export default function PeriodBuffer({
   // Emits the chosen adaptation for the current type.
   const adaptation$ = new ReplaySubject<Adaptation|null>(1);
   return adaptation$.pipe(
-    switchMap((adaptation) => {
+    switchMap((adaptation, i) => {
+      const isSwitchingAdaptation = i > 0;
       if (adaptation == null) {
         log.info(`Buffer: Set no ${bufferType} Adaptation`, period);
         const previousQSourceBuffer = sourceBuffersManager.get(bufferType);
@@ -150,8 +151,10 @@ export default function PeriodBuffer({
         mergeMap((tick) => {
           const qSourceBuffer = createOrReuseQueuedSourceBuffer(
             sourceBuffersManager, bufferType, adaptation, options);
-          const strategy = getAdaptationSwitchStrategy(
-            qSourceBuffer.getBuffered(), period, bufferType, tick);
+          const strategy = isSwitchingAdaptation ?
+            getAdaptationSwitchStrategy(
+              qSourceBuffer.getBuffered(), period, bufferType, tick) :
+            { type: "continue" as "continue" };
 
           if (strategy.type === "needs-reload") {
             return observableOf(EVENTS.needsMediaSourceReload());
@@ -180,8 +183,6 @@ export default function PeriodBuffer({
   );
 
   /**
-   * @param {string} bufferType
-   * @param {Object} period
    * @param {Object} adaptation
    * @param {Object} qSourceBuffer
    * @returns {Observable}
