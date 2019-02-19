@@ -370,13 +370,15 @@ export default class RepresentationChooser {
     clock$ : Observable<IRepresentationChooserClockTick>,
     representations : Representation[]
   ) : Observable<IABREstimation> {
-    if (!representations.length) {
+    const decryptableRepresentations = representations
+      .filter(representation => representation.decryptable !== false);
+    if (!decryptableRepresentations.length) {
       throw new Error("ABRManager: no representation choice given");
     }
-    if (representations.length === 1) {
+    if (decryptableRepresentations.length === 1) {
       return observableOf({
         bitrate: undefined, // Bitrate estimation is deactivated here
-        representation: representations[0],
+        representation: decryptableRepresentations[0],
         manual: false,
         urgent: true,
       });
@@ -411,8 +413,8 @@ export default class RepresentationChooser {
         // -- MANUAL mode --
         return observableOf({
           bitrate: undefined, // Bitrate estimation is deactivated here
-          representation: fromBitrateCeil(representations, manualBitrate) ||
-            representations[0],
+          representation: fromBitrateCeil(decryptableRepresentations, manualBitrate) ||
+            decryptableRepresentations[0],
           manual: true,
           urgent: true, // a manual bitrate switch should happen immediately
         });
@@ -485,12 +487,12 @@ export default class RepresentationChooser {
             newBitrateCeil /= clock.speed;
           }
 
-          const _representations = getFilteredRepresentations(representations,
-                                                              deviceEvents);
+          const _representations =
+            getFilteredRepresentations(decryptableRepresentations, deviceEvents);
 
           const chosenRepresentation = fromBitrateCeil(_representations,
                                                        newBitrateCeil) ||
-                                       representations[0];
+                                       decryptableRepresentations[0];
 
           const urgent = (() => {
             if (clock.downloadBitrate == null) {
