@@ -49,12 +49,12 @@ export type IEMEManagerEvent = IEMEWarningEvent |
                                ICreatedMediaKeysEvent |
                                IAttachedMediaKeysEvent |
                                ILicenseUpdatedEvent |
-                               IKeyStatusChangeEvent;
+                               IRestrictionUpdates;
 
-export interface IKeyStatusChangeEvent { type : "key-statuses-change";
-                                         value: { statuses: Array<{
-                                                    keyStatus: MediaKeyStatus;
-                                                    keyId : ArrayBuffer; }>; }; }
+export interface IRestrictionUpdates { type : "restriction-updates";
+                                       value: { statuses: Array<{
+                                                keyStatus: MediaKeyStatus;
+                                                keyId : ArrayBuffer; }>; }; }
 
 // Infos indentifying a MediaKeySystemAccess
 export interface IKeySystemAccessInfos {
