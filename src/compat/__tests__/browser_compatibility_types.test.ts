@@ -99,16 +99,16 @@ describe("compat - browser compatibility types", () => {
     (window as any).MSMediaSource = origMSMediaSource;
   });
 
-  it("should use the native MediaKeys if defined", () => {
+  it("should use the native MediaKeys if the only defined MediaKeys API", () => {
     const origMediaKeys = (window as any).MediaKeys;
     const origMozMediaKeys = (window as any).MozMediaKeys;
     const origWebKitMediaKeys = (window as any).WebKitMediaKeys;
     const origMSMediaKeys = (window as any).MSMediaKeys;
 
     (window as any).MediaKeys = { a: 1 };
-    (window as any).MozMediaKeys = { a: 2 };
-    (window as any).WebKitMediaKeys = { a: 3 };
-    (window as any).MSMediaKeys = { a: 4 };
+    (window as any).MozMediaKeys = undefined;
+    (window as any).WebKitMediaKeys = undefined;
+    (window as any).MSMediaKeys = undefined;
 
     const { MediaKeys_ } = require("../browser_compatibility_types");
     expect(MediaKeys_).toEqual({ a: 1 });
