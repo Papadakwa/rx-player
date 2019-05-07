@@ -24,11 +24,9 @@ import {
   Period,
   Representation,
 } from "../../manifest";
-import { QueuedSourceBuffer } from "../source_buffers";
 import SegmentBookkeeper from "./segment_bookkeeper";
 
-export default function getBlacklistedRanges(
-  queuedSourceBuffer : QueuedSourceBuffer<unknown>,
+export default function getContentRanges(
   segmentBookkeeper : SegmentBookkeeper,
   contents : Array<{
     period : Period;
@@ -37,7 +35,7 @@ export default function getBlacklistedRanges(
   }>
 ) : Array<[number, number]> {
   const ranges : Array<[number, number]> = [];
-  segmentBookkeeper.synchronizeBuffered(queuedSourceBuffer.getBuffered());
+  // segmentBookkeeper.synchronizeBuffered(queuedSourceBuffer.getBuffered());
 
   for (let i = 0; i < segmentBookkeeper.inventory.length; i++) {
     for (let j = 0; j < contents.length; j++) {
