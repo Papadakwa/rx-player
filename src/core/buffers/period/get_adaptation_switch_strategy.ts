@@ -22,6 +22,7 @@ import {
   keepRangeIntersection,
 } from "../../../utils/ranges";
 import { IBufferType } from "../../source_buffers";
+import SegmentBookkeeper from "../segment_bookkeeper";
 
 const { ADAPTATION_SWITCH_BUFFER_PADDINGS } = config;
 
@@ -41,6 +42,7 @@ export type IAdaptationSwitchStrategy =
  */
 export default function getAdaptationSwitchStrategy(
   buffered : TimeRanges,
+  segmentBookkeeper : SegmentBookkeeper,
   period : Period,
   bufferType : IBufferType,
   clockTick : { currentTime : number; readyState : number }
