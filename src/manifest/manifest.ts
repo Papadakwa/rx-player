@@ -465,7 +465,7 @@ export default class Manifest extends EventEmitter<IManifestEvents> {
               for (let m = 0; m < keyIDs.length; m++) {
                 if (isABEqualBytes(keyIDs[m], contentProtection.keyId)) {
                   updates.push({ period, adaptation, representation });
-                  representation.decryptable = false;
+                  representation.canBeDecrypted = false;
                 }
               }
             }

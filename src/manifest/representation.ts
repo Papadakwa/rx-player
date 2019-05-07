@@ -92,7 +92,7 @@ class Representation {
   *     Representation
   *   - if `undefined` there is no certainty on this matter
   */
-  public decryptable? : boolean;
+  public canBeDecrypted? : boolean;
 
   /**
    * @param {Object} args

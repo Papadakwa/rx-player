@@ -124,7 +124,7 @@ export default function AdaptationBuffer<T>(
   }));
 
   const decryptableRepresentations = adaptation.representations
-    .filter((representation) => representation.decryptable !== false);
+    .filter((representation) => representation.canBeDecrypted !== false);
   const abr$ : Observable<IABREstimation> =
     abrManager.get$(adaptation.type, abrClock$, decryptableRepresentations)
       .pipe(observeOn(asapScheduler), share());
