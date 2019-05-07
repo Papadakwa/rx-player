@@ -45,16 +45,17 @@ export interface ILicenseUpdatedEvent { type: "license-updated";
                                                             ICustomMediaKeySession;
                                                   license: ILicense; }; }
 
-export type IEMEManagerEvent = IEMEWarningEvent |
-                               ICreatedMediaKeysEvent |
-                               IAttachedMediaKeysEvent |
-                               ILicenseUpdatedEvent |
-                               IRestrictionUpdates;
-
 export interface IRestrictionUpdates { type : "restriction-updates";
                                        value: { statuses: Array<{
                                                 keyStatus: MediaKeyStatus;
                                                 keyId : ArrayBuffer; }>; }; }
+
+export type IEMEManagerEvent =
+  IEMEWarningEvent |
+  ICreatedMediaKeysEvent |
+  IAttachedMediaKeysEvent |
+  ILicenseUpdatedEvent |
+  IRestrictionUpdates;
 
 // Infos indentifying a MediaKeySystemAccess
 export interface IKeySystemAccessInfos {
