@@ -1,5 +1,11 @@
 export default [
   {
+    "name": "Akamai Low Latency",
+    "url": "https://akamaibroadcasteruseast.akamaized.net/cmaf/live/657078/akasource/out.mpd",
+    "transport": "dash",
+    "live": true,
+  },
+  {
     "name": "CMAF Mono-profile",
     "url": "http://194.4.243.57/cmaf_ull/manifest.mpd",
     "transport": "dash",

@@ -49,12 +49,19 @@ export default function shouldDownloadSegment(
   },
   segmentBookkeeper: SegmentBookkeeper,
   wantedRange : { start : number; end : number },
-  segmentIDsToIgnore : SimpleSet
+  loadedButNotBuffered : SimpleSet
 ) : boolean {
-  const { period, adaptation, representation } = content;
-  const shouldIgnore = segmentIDsToIgnore.test(segment.id);
+  const {
+    period,
+    adaptation,
+    representation,
+  } = content;
 
-  if (shouldIgnore) {
+  const isWaitingForBuffering = loadedButNotBuffered.test(segment.id);
+
+  // If a segment is being bufferized and it is not loaded anymore,
+  // we should ask for download
+  if (isWaitingForBuffering) {
     return false;
   }
 

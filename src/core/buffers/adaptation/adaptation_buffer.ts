@@ -41,7 +41,6 @@ import {
   map,
   observeOn,
   share,
-  takeUntil,
 } from "rxjs/operators";
 import log from "../../../log";
 import Manifest, {
@@ -108,7 +107,8 @@ export default function AdaptationBuffer<T>(
   content : { manifest : Manifest;
               period : Period; adaptation : Adaptation; },
   abrManager : ABRManager,
-  options : { manualBitrateSwitchingMode : "seamless" | "direct" }
+  options : { manualBitrateSwitchingMode : "seamless"|"direct" },
+  lowLatencyMode: boolean
 ) : Observable<IAdaptationBufferEvent<T>> {
   const directManualBitrateSwitching = options.manualBitrateSwitchingMode === "direct";
   const { manifest, period, adaptation } = content;
@@ -124,14 +124,18 @@ export default function AdaptationBuffer<T>(
   }));
 
   const abr$ : Observable<IABREstimation> =
-    abrManager.get$(adaptation.type, abrClock$, adaptation.representations)
-      .pipe(observeOn(asapScheduler), share());
+    abrManager.get$(adaptation.type,
+                    abrClock$,
+                    adaptation.representations,
+                    lowLatencyMode
+    ).pipe(observeOn(asapScheduler), share());
 
-  // emit when the current RepresentationBuffer should be stopped right now
-  const killCurrentBuffer$ = new Subject<void>();
-
-  // emit when the current RepresentationBuffer should stop making new downloads
-  const terminateCurrentBuffer$ = new Subject<void>();
+  /**
+   * Emit when the current RepresentationBuffer should stop making new downloads.
+   * "Kill" buffer means that buffer should be killed now. In low latency mode,
+   * currently downloaded segment should go the end.
+   */
+  const stopCurrentBuffer$ = new Subject<{ type: "kill"|"terminate" }>();
 
   // Emit at each bitrate estimate done by the ABRManager
   const bitrateEstimate$ = abr$.pipe(
@@ -160,8 +164,7 @@ export default function AdaptationBuffer<T>(
         }
         const representationChange$ = observableOf(
           EVENTS.representationChange(adaptation.type, period, representation));
-        const representationBuffer$ = createRepresentationBuffer(representation)
-          .pipe(takeUntil(killCurrentBuffer$));
+        const representationBuffer$ = createRepresentationBuffer(representation);
         return observableConcat(representationChange$, representationBuffer$);
       })),
     newRepresentation$.pipe(map((estimation, i) => {
@@ -172,12 +175,12 @@ export default function AdaptationBuffer<T>(
         log.info("Buffer: urgent Representation switch", adaptation.type);
 
         // kill current buffer after concatMapLatest has been called
-        killCurrentBuffer$.next();
+        stopCurrentBuffer$.next({ type: "kill" });
       } else {
         log.info("Buffer: slow Representation switch", adaptation.type);
 
         // terminate current buffer after concatMapLatest has been called
-        terminateCurrentBuffer$.next();
+        stopCurrentBuffer$.next({ type: "terminate" });
       }
     }), ignoreElements())
   );
@@ -195,16 +198,21 @@ export default function AdaptationBuffer<T>(
   ) : Observable<IRepresentationBufferEvent<T>> {
     return observableDefer(() => {
       log.info("Buffer: changing representation", adaptation.type, representation);
-      return RepresentationBuffer({ clock$,
-                                    content: { representation,
-                                               adaptation,
-                                               period,
-                                               manifest },
-                                    queuedSourceBuffer,
-                                    segmentBookkeeper,
-                                    segmentFetcher,
-                                    terminate$: terminateCurrentBuffer$,
-                                    wantedBufferAhead$, });
+      return RepresentationBuffer({
+        clock$,
+        content: {
+          representation,
+          adaptation,
+          period,
+          manifest,
+        },
+        queuedSourceBuffer,
+        segmentBookkeeper,
+        segmentFetcher,
+        stop$: stopCurrentBuffer$,
+        wantedBufferAhead$,
+        lowLatencyMode,
+      });
     });
   }
 }

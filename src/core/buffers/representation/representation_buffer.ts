@@ -36,6 +36,7 @@ import {
   Subject,
 } from "rxjs";
 import {
+  filter,
   finalize,
   map,
   mapTo,
@@ -44,6 +45,7 @@ import {
   startWith,
   switchMap,
   take,
+  takeUntil,
   takeWhile,
   tap,
 } from "rxjs/operators";
@@ -99,8 +101,9 @@ export interface IRepresentationBufferArguments<T> {
   queuedSourceBuffer : QueuedSourceBuffer<T>;
   segmentBookkeeper : SegmentBookkeeper;
   segmentFetcher : IPrioritizedSegmentFetcher<T>;
-  terminate$ : Observable<void>;
+  stop$ : Observable<{ type: "kill"|"terminate" }>;
   wantedBufferAhead$ : Observable<number>;
+  lowLatencyMode : boolean;
 }
 
 // Informations about a Segment waiting for download
@@ -155,8 +158,9 @@ export default function RepresentationBuffer<T>({
   queuedSourceBuffer, // allows to interact with the SourceBuffer
   segmentBookkeeper, // keep track of what segments already are in the SourceBuffer
   segmentFetcher, // allows to download new segments
-  terminate$, // signal the RepresentationBuffer that it should terminate
-  wantedBufferAhead$, // emit the buffer goal
+  stop$, // signal the RepresentationBuffer that it should terminate
+  wantedBufferAhead$, // emit the buffer goal,
+  lowLatencyMode,
 } : IRepresentationBufferArguments<T>) : Observable<IRepresentationBufferEvent<T>> {
   const { manifest, period, adaptation, representation } = content;
   const codec = representation.getMimeTypeString();
@@ -187,7 +191,33 @@ export default function RepresentationBuffer<T>({
 
   // Keep track of downloaded segments currently awaiting to be appended to the
   // SourceBuffer.
-  const sourceBufferWaitingQueue = new SimpleSet();
+  const loadedButNoBufferedSegments = new SimpleSet();
+
+  const terminate$ = stop$.pipe(
+    share(),
+    filter((e): e is { type: "terminate" } => !!e && e.type === "terminate")
+  );
+
+  const kill$ = stop$.pipe(
+    share(),
+    filter((e): e is { type: "kill" }  => !!e && e.type === "kill"),
+    mergeMap(() => {
+      if (lowLatencyMode && currentSegmentRequest) {
+        const { segment } = currentSegmentRequest;
+        const rangesToClean$ = segmentBookkeeper.inventory
+          .filter((element) => element.infos.segment.id === segment.id)
+          .map(({ bufferedStart, bufferedEnd, start, end }) => {
+            const _start = bufferedStart != null ? bufferedStart : start;
+            const _end = bufferedEnd != null ? bufferedEnd : end;
+            return queuedSourceBuffer.removeBuffer(_start, _end);
+          });
+
+        return observableCombineLatest(rangesToClean$)
+          .pipe(take(1), tap(() => loadedButNoBufferedSegments.remove(segment.id)));
+      }
+      return observableOf(null);
+    })
+  );
 
   const status$ = observableCombineLatest([
     clock$,
@@ -332,11 +362,47 @@ export default function RepresentationBuffer<T>({
   //   - download every segments queued sequentially
   //   - append them to the SourceBuffer
   const bufferQueue$ = startQueue$.pipe(
-    switchMap(() => downloadQueue.length ? loadSegmentsFromQueue() : EMPTY),
-    mergeMap(appendSegment)
+    mergeMap(() => {
+      if (lowLatencyMode && currentSegmentRequest) {
+        const { segment } = currentSegmentRequest;
+        const rangesToClean$ = segmentBookkeeper.inventory
+          .filter((element) => element.infos.segment.id === segment.id)
+          .map(({ start, end }) => {
+            return queuedSourceBuffer.removeBuffer(start, end);
+          });
+
+        return observableCombineLatest(rangesToClean$)
+          .pipe(take(1), tap(() => loadedButNoBufferedSegments.remove(segment.id)));
+      }
+      return observableOf(null);
+    }),
+    switchMap(() => {
+      return downloadQueue.length ? loadSegmentsFromQueue() :
+                                    EMPTY;
+    }),
+    mergeMap((loadSegment) => {
+      return appendSegment(loadSegment).pipe(
+        tap(() => {
+          const { segment } = loadSegment;
+          if (segment.duration != null && segmentBookkeeper.hasPlayableSegment(
+            { start: segment.time, end: segment.time + segment.duration },
+            {
+              time: segment.time,
+              duration: segment.duration || 0,
+              timescale: segment.timescale,
+            }
+          )) {
+            loadedButNoBufferedSegments.remove(segment.id);
+          }
+        })
+      );
+    })
   );
 
-  return observableMerge(status$, bufferQueue$).pipe(share());
+  return observableMerge(status$, bufferQueue$).pipe(
+    share(),
+    takeUntil(kill$)
+  );
 
   /**
    * Request every Segment in the ``downloadQueue`` on subscription.
@@ -363,13 +429,15 @@ export default function RepresentationBuffer<T>({
         currentSegmentRequest = { segment, priority, request$ };
         const response$ = request$.pipe(
           mergeMap((fetchedSegment) => {
-            currentSegmentRequest = null;
             const initInfos = initSegmentObject &&
                               initSegmentObject.segmentInfos ||
                               undefined;
             return fetchedSegment.parse(initInfos);
           }),
-          map((args) => ({ segment, value: args }))
+          map((args) => ({ segment, value: args })),
+          finalize(() => {
+            loadedButNoBufferedSegments.add(segment.id);
+          })
         );
 
         return observableConcat(response$, requestNextSegment$);
@@ -410,8 +478,6 @@ export default function RepresentationBuffer<T>({
         codec,
       });
 
-      sourceBufferWaitingQueue.add(segment.id);
-
       return append$.pipe(
         mapTo(EVENTS.addedSegment(bufferType, segment, segmentData)),
         tap(() => { // add to SegmentBookkeeper
@@ -428,10 +494,8 @@ export default function RepresentationBuffer<T>({
                                    segment,
                                    start,
                                    end);
-        }),
-        finalize(() => { // remove from queue
-          sourceBufferWaitingQueue.remove(segment.id);
-        }));
+        })
+      );
     });
   }
 
@@ -449,6 +513,6 @@ export default function RepresentationBuffer<T>({
                          content,
                          segmentBookkeeper,
                          neededRange,
-                         sourceBufferWaitingQueue);
+                         loadedButNoBufferedSegments);
   }
 }
