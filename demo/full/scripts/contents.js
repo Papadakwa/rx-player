@@ -1,5 +1,17 @@
 export default [
   {
+    "name": "CMAF Mono-profile",
+    "url": "http://194.4.243.57/cmaf_ull/manifest.mpd",
+    "transport": "dash",
+    "live": true,
+  },
+  {
+    "name": "CMAF Multi-profile",
+    "url": "",
+    "transport": "dash",
+    "live": true,
+  },
+  {
     "name": "DASH-IF - SegmentTimeline live stream",
     "url": "https://vm2.dashif.org/livesim-dev/segtimeline_1/testpic_6s/Manifest.mpd",
     "transport": "dash",
