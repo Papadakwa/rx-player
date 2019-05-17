@@ -31,7 +31,7 @@ import {
   takeUntil,
 } from "rxjs/operators";
 import config from "../../config";
-import { ICustomError } from "../../errors";
+import { ICustomError, MediaError } from "../../errors";
 import log from "../../log";
 import throttle from "../../utils/rx-throttle";
 import ABRManager, {
@@ -189,6 +189,17 @@ export default function Stream({
   // through a throwing Observable.
   const mediaErrorManager$ = createMediaErrorManager(mediaElement);
 
+  const reloadStreamAfterMediaError$ = mediaErrorManager$.pipe(
+    map(({ fatal, errorDetail }) => {
+      if (fatal) {
+        log.error(`stream: media element MEDIA_ERR(${errorDetail})`);
+        throw new MediaError(errorDetail, null, true);
+      }
+      console.log("!!! MEDIA ERROR");
+      return null;
+    })
+  );
+
   // Start the whole Stream.
   const stream$ = observableCombineLatest(
     openMediaSource(mediaElement),
@@ -215,7 +226,10 @@ export default function Stream({
 
     const reloadStreamSubject$ = new Subject<void>();
     const onStreamLoaderEvent = streamLoaderEventProcessor(reloadStreamSubject$);
-    const reloadStream$ : Observable<IStreamEvent> = reloadStreamSubject$.pipe(
+    const reloadStream$ : Observable<IStreamEvent> = observableMerge(
+      reloadStreamSubject$,
+      reloadStreamAfterMediaError$
+    ).pipe(
       switchMap(() => {
         const currentPosition = mediaElement.currentTime;
         const isPaused = mediaElement.paused;

@@ -20,6 +20,7 @@ import config from "../../config";
 import log from "../../log";
 import throttle from "../../utils/rx-throttle";
 import ABRManager from "../abr";
+import { MediaError } from "../../errors";
 import { createManifestPipeline, SegmentPipelinesManager, } from "../pipelines";
 import createEMEManager from "./create_eme_manager";
 import openMediaSource from "./create_media_source";
@@ -78,6 +79,16 @@ export default function Stream(_a) {
     // Translate errors coming from the media element into RxPlayer errors
     // through a throwing Observable.
     var mediaErrorManager$ = createMediaErrorManager(mediaElement);
+    const reloadStreamAfterMediaError$ = mediaErrorManager$.pipe(
+        map(function({ fatal, errorDetail }) {
+          if (fatal) {
+            log.error(`stream: media element MEDIA_ERR(${errorDetail})`);
+            throw new MediaError(errorDetail, null, true);
+          }
+          console.log("!!! MEDIA ERROR");
+          return null;
+        })
+      );
     // Start the whole Stream.
     var stream$ = observableCombineLatest(openMediaSource(mediaElement), fetchManifest(url)).pipe(mergeMap(function (_a) {
         var mediaSource = _a[0], manifest = _a[1];
@@ -100,7 +111,10 @@ export default function Stream(_a) {
         log.debug("initial time calculated:", initialTime);
         var reloadStreamSubject$ = new Subject();
         var onStreamLoaderEvent = streamLoaderEventProcessor(reloadStreamSubject$);
-        var reloadStream$ = reloadStreamSubject$.pipe(switchMap(function () {
+        var reloadStream$ = observableMerge(
+            reloadStreamSubject$,
+            reloadStreamAfterMediaError$
+        ).pipe(switchMap(function () {
             var currentPosition = mediaElement.currentTime;
             var isPaused = mediaElement.paused;
             return openMediaSource(mediaElement).pipe(mergeMap(function (newMS) { return loadStream(newMS, currentPosition, !isPaused); }), map(onStreamLoaderEvent), startWith(EVENTS.reloadingStream()));
