@@ -80,7 +80,7 @@ class ContentList extends React.Component {
       manifestUrl: "",
       drm: DRM_TYPES[0],
       autoPlay: true,
-      lowLatency: false,
+      lowLatency: true,
     };
   }
 
